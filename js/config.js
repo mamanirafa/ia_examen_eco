@@ -12,7 +12,7 @@ window.NEXO_CONFIG = {
 
   // URL de la aplicación web de Apps Script (ver apps_script/Codigo.gs).
   // Dejala vacía "" para probar sin planilla.
-  sheetUrl: "",
+  sheetUrl: "https://script.google.com/macros/s/AKfycbwXvO-8FdK8R76DA1aNn1ljRAlkEGE6uw_nOPPod0_eSjPPj2Roxx0Psj3niLU72bXu/exec",
 
   // Los códigos NO se guardan en texto: se guarda su huella (SHA-256).
   // Para cambiarlos, abrí docente.html, escribí el código nuevo y copiá la huella acá.
