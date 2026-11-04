@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>NEXO · Generar huella de código</title>
+<style>
+body{font-family:system-ui,sans-serif;background:#0b1830;color:#fbf6ea;display:grid;place-items:center;min-height:100vh;margin:0;padding:16px}
+.c{background:#132a4c;border:1px solid #1f4570;border-radius:16px;padding:24px;max-width:560px;width:100%}
+input{width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid #2c5a8a;background:#0b1830;color:#fff;font-size:18px}
+code{display:block;word-break:break-all;background:#0b1830;padding:12px;border-radius:10px;margin-top:12px;color:#5eead4}
+</style>
+</head>
+<body><div class="c">
+<h2>Generar huella de un código nuevo</h2>
+<p>Escribí el código (sala o docente). Copiá la huella en <b>js/config.js</b> (hashSala o hashDocente). Mayúsculas y minúsculas no importan.</p>
+<input id="i" autocomplete="off" placeholder="Nuevo código">
+<code id="o">—</code>
+</div>
+<script>
+document.getElementById("i").addEventListener("input", async e => {
+  const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(e.target.value.trim().toUpperCase()));
+  document.getElementById("o").textContent = e.target.value.trim() ? Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2, "0")).join("") : "—";
+});
+</script>
+</body></html>
