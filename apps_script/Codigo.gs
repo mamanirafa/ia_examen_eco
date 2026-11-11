@@ -1,5 +1,5 @@
 /**
- * NEXO · Registro de respuestas + sala de espera sincronizada (versión 2)
+ * NEXO · Registro de respuestas + sala de espera sincronizada (versión 2.1: envíos en lote, sin duplicados)
  * 1. En la planilla: Extensiones → Apps Script → reemplazá TODO por este código → Guardar.
  * 2. Implementar → Administrar implementaciones → ✏️ editar → Versión: «Nueva versión» → Implementar.
  *    (Así la URL /exec sigue siendo la misma y no hay que tocar config.js.)
@@ -17,31 +17,49 @@ const CLAVES_DOCENTE = [
 ];
 const VENTANA_MS = 3 * 60 * 60 * 1000; // la habilitación y la lista valen 3 horas
 
-/* ---------- Registro (lo envía cada examen) ---------- */
+/* ---------- Registro (lo envía cada examen, en lotes) ---------- */
 function doPost(e) {
+  let lote;
+  try { const d = JSON.parse(e.postData.contents); lote = Array.isArray(d) ? d : [d]; }
+  catch (err) { return texto("error: json"); }
   const lock = LockService.getScriptLock();
-  lock.waitLock(20000);
+  if (!lock.tryLock(25000)) return texto("ocupado"); // el examen reintenta solo
   try {
-    const d = JSON.parse(e.postData.contents);
-    const nombre = HOJAS[d.tipo] || "Otros";
+    const cache = CacheService.getScriptCache();
+    const rids = lote.map(d => d.rid).filter(Boolean);
+    const vistos = rids.length ? cache.getAll(rids) : {};
+    const ahora = Date.now(), porHoja = {};
+    lote.forEach(d => {
+      if (d.rid && vistos[d.rid]) return;          // ya registrado (reintento)
+      d.ts_srv = ahora;                           // hora del servidor: no depende del reloj de cada PC
+      const n = HOJAS[d.tipo] || "Otros";
+      (porHoja[n] = porHoja[n] || []).push(d);
+    });
     const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sh = ss.getSheetByName(nombre) || ss.insertSheet(nombre);
-    let head = sh.getLastRow() ? sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0] : [];
-    const nuevas = Object.keys(d).filter(k => head.indexOf(k) < 0);
-    if (nuevas.length) {
-      head = head.concat(nuevas);
-      sh.getRange(1, 1, 1, head.length).setValues([head]).setFontWeight("bold").setBackground("#0f2747").setFontColor("#ffffff");
-      sh.setFrozenRows(1);
-    }
-    sh.appendRow(head.map(k => d[k] === undefined ? "" : d[k]));
-    if (d.tipo === "incidente" && d.evento === "salida") sh.getRange(sh.getLastRow(), 1, 1, head.length).setBackground("#fde2e2");
-    return ContentService.createTextOutput("ok");
+    Object.keys(porHoja).forEach(n => {
+      const filasNuevas = porHoja[n];
+      const sh = ss.getSheetByName(n) || ss.insertSheet(n);
+      let head = sh.getLastRow() ? sh.getRange(1, 1, 1, sh.getLastColumn()).getValues()[0] : [];
+      const nuevas = [];
+      filasNuevas.forEach(d => Object.keys(d).forEach(k => { if (head.indexOf(k) < 0 && nuevas.indexOf(k) < 0) nuevas.push(k); }));
+      if (nuevas.length) {
+        head = head.concat(nuevas);
+        sh.getRange(1, 1, 1, head.length).setValues([head]).setFontWeight("bold").setBackground("#0f2747").setFontColor("#ffffff");
+        sh.setFrozenRows(1);
+      }
+      const desde = sh.getLastRow() + 1;
+      sh.getRange(desde, 1, filasNuevas.length, head.length).setValues(filasNuevas.map(d => head.map(k => d[k] === undefined ? "" : d[k])));
+      filasNuevas.forEach((d, i) => { if (d.tipo === "incidente" && d.evento === "salida") sh.getRange(desde + i, 1, 1, head.length).setBackground("#fde2e2"); });
+    });
+    if (rids.length) { const m = {}; rids.forEach(r => m[r] = "1"); cache.putAll(m, 21600); }
+    return texto("ok");
   } catch (err) {
-    return ContentService.createTextOutput("error: " + err);
+    return texto("error: " + err);
   } finally {
     lock.releaseLock();
   }
 }
+function texto(s) { return ContentService.createTextOutput(s); }
 
 /* ---------- Sala de espera y panel docente ---------- */
 function doGet(e) {
@@ -65,7 +83,7 @@ function doGet(e) {
     props.setProperty(key, JSON.stringify(st));
   }
   const on = st.habilitado && Date.now() - st.t < VENTANA_MS;
-  return salida({ ok: true, habilitado: on, t: st.t, alumnos: alumnos(curso, Math.max(st.reset || 0, Date.now() - VENTANA_MS)) });
+  return salida({ ok: true, ahora: Date.now(), habilitado: on, t: st.t, alumnos: alumnos(curso, Math.max(st.reset || 0, Date.now() - VENTANA_MS)) });
 }
 
 function salida(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
@@ -80,17 +98,24 @@ function claveOk(c) {
 function filas(nombre) {
   const sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(nombre);
   if (!sh || sh.getLastRow() < 2) return [];
-  const v = sh.getDataRange().getValues(), h = v.shift();
-  return v.map(r => { const o = {}; h.forEach((k, i) => o[k] = r[i]); return o; });
+  const ultima = sh.getLastRow(), cols = sh.getLastColumn(), desde = Math.max(2, ultima - 5000 + 1); // solo las últimas 5000 filas
+  const h = sh.getRange(1, 1, 1, cols).getValues()[0];
+  return sh.getRange(desde, 1, ultima - desde + 1, cols).getValues().map(r => { const o = {}; h.forEach((k, i) => o[k] = r[i]); return o; });
 }
 
 function alumnos(curso, desde) {
-  const m = {}, ok = r => r.curso === curso && Number(r.ts || 0) >= desde;
-  const nuevo = r => ({ alumno: r.alumno, estado: "esperando", resp: 0, total: "", salidas: 0, nota: "" });
-  filas("Sala").filter(ok).forEach(r => { m[r.sesion] = m[r.sesion] || nuevo(r); });
-  filas("Inicio").filter(ok).forEach(r => { const a = m[r.sesion] = m[r.sesion] || nuevo(r); a.estado = "en examen"; a.total = r.total || ""; });
-  filas("Respuestas").filter(ok).forEach(r => { const a = m[r.sesion]; if (a) a.resp++; });
-  filas("Incidentes").filter(ok).forEach(r => { const a = m[r.sesion]; if (a && r.evento === "salida") a.salidas++; });
-  filas("Final").filter(ok).forEach(r => { const a = m[r.sesion]; if (a) { a.estado = "terminado"; a.nota = r.nota; } });
-  return Object.keys(m).map(k => m[k]).sort((x, y) => String(x.alumno).localeCompare(String(y.alumno)));
+  const m = {}, ok = r => r.curso === curso && Number(r.ts_srv || 0) >= desde;
+  const al = r => {
+    const a = m[r.sesion] = m[r.sesion] || { alumno: r.alumno, estado: "esperando", items: {}, resp: 0, total: "", salidas: 0, nota: "", ultima: 0 };
+    a.ultima = Math.max(a.ultima, Number(r.ts_srv) || 0);
+    return a;
+  };
+  const sube = (a, e) => { const orden = ["esperando", "en examen", "terminado"]; if (orden.indexOf(e) > orden.indexOf(a.estado)) a.estado = e; };
+  filas("Sala").filter(ok).forEach(r => al(r));
+  filas("Inicio").filter(ok).forEach(r => { const a = al(r); sube(a, "en examen"); a.total = r.total || a.total; });
+  filas("Respuestas").filter(ok).forEach(r => { const a = al(r); sube(a, "en examen"); a.items[r.item] = 1; });
+  filas("Incidentes").filter(ok).forEach(r => { const a = al(r); if (r.evento === "salida") a.salidas++; });
+  filas("Final").filter(ok).forEach(r => { const a = al(r); a.estado = "terminado"; a.nota = r.nota; });
+  return Object.keys(m).map(k => { const a = m[k]; a.resp = Object.keys(a.items).length; delete a.items; return a; })
+    .sort((x, y) => String(x.alumno).localeCompare(String(y.alumno)));
 }
