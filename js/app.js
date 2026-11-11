@@ -74,25 +74,45 @@
 
   /* ---------- Registro (Google Sheets) ---------- */
   function send(tipo, data) {
-    const row = Object.assign({ tipo, sesion: S.sesion || "", fecha: new Date().toLocaleString("es-AR"), ts: Date.now(), alumno: S.alumno ? S.alumno.apellido + ", " + S.alumno.nombre : "", curso: C.curso }, data);
+    S.seq = (S.seq || 0) + 1; save();
+    const row = Object.assign({ tipo, rid: (S.sesion || "NX") + "-" + S.seq, sesion: S.sesion || "", fecha: new Date().toLocaleString("es-AR"), ts: Date.now(), alumno: S.alumno ? S.alumno.apellido + ", " + S.alumno.nombre : "", curso: C.curso }, data);
     const log = store.get(LK, []); log.push(row); store.set(LK, log);
     const q = store.get(QK, []); q.push(row); store.set(QK, q);
     flush();
   }
-  let flushing = false;
+  /* Envío a la planilla: en lotes, con confirmación del servidor y reintentos.
+     La cola se relee siempre del almacenamiento para no perder lo que se agregó mientras viajaba un lote.
+     Cada fila lleva un «rid» único: si un lote se reintenta, el servidor descarta los repetidos. */
+  let flushing = false, corsFallas = 0;
   async function flush() {
     if (!C.sheetUrl || flushing) { updSync(); return; }
     flushing = true;
-    let q = store.get(QK, []);
-    while (q.length) {
-      try {
-        await fetch(C.sheetUrl, { method: "POST", mode: "no-cors", keepalive: true, headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(q[0]) });
-        q.shift(); store.set(QK, q);
-      } catch (e) { break; }
-    }
-    flushing = false; updSync();
+    try {
+      for (let vueltas = 0; vueltas < 20; vueltas++) {
+        const lote = store.get(QK, []).slice(0, 15);
+        if (!lote.length) break;
+        let ok = false;
+        try {
+          if (corsFallas >= 3) {
+            // Modo de compatibilidad: si el navegador no deja leer la respuesta, se envía igual (el servidor evita duplicados)
+            await fetch(C.sheetUrl, { method: "POST", mode: "no-cors", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(lote) });
+            ok = true;
+          } else {
+            const r = await fetch(C.sheetUrl, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify(lote) });
+            ok = (await r.text()).trim().indexOf("ok") === 0;
+            corsFallas = 0;
+          }
+        } catch (e) {
+          if (navigator.onLine !== false) corsFallas++;
+          ok = false;
+        }
+        if (!ok) break;
+        const ids = new Set(lote.map(x => x.rid));
+        store.set(QK, store.get(QK, []).filter(x => !ids.has(x.rid)));
+      }
+    } finally { flushing = false; updSync(); }
   }
-  setInterval(flush, 8000);
+  setInterval(flush, 6000 + Math.floor(Math.random() * 4000));
   window.addEventListener("online", flush);
   function updSync() {
     const el = $("#sync"); if (!el) return;
@@ -350,7 +370,7 @@
     if (!salaSync() || S.habilitado) return;
     if (!S.esperaEnviada) { S.esperaEnviada = true; save(); send("espera", { idioma: S.lang }); }
     const tick = async () => { if (S.screen !== "brief") { clearInterval(salaInt); return; } if (await consultarSala()) habilitarLocal(); };
-    clearInterval(salaInt); salaInt = setInterval(tick, 4000); tick();
+    clearInterval(salaInt); salaInt = setInterval(tick, 4000 + Math.floor(Math.random() * 2000)); tick();
   }
 
   function renderBrief() {
