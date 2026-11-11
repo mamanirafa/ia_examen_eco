@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>NEXO · Panel docente</title>
+  <link rel="icon" href="assets/img/logo.svg" type="image/svg+xml">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<main class="panel" id="panel"></main>
+<script src="js/config.js"></script>
+<script>
+/* NEXO · Panel docente: habilita el inicio sincronizado y muestra el avance del curso en vivo */
+(function () {
+  "use strict";
+  const C = window.NEXO_CONFIG, root = document.getElementById("panel");
+  let clave = "", datos = null, timer = null, ocupado = false;
+  const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  async function sha(s) { const b = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(String(s).trim().toUpperCase())); return Array.from(new Uint8Array(b)).map(x => x.toString(16).padStart(2, "0")).join(""); }
+  const hora = ms => ms ? new Date(ms).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }) : "";
+
+  function login(msg) {
+    root.innerHTML = '<div class="hero"><img src="assets/img/logo.svg" class="logo-big" alt=""><h1><span class="grad">NEXO</span> · Panel docente</h1><p class="meta">' + esc(C.curso) + '</p></div>' +
+      '<section class="card form"><label>Código docente<input class="inp" id="cod" type="password" autocomplete="off"></label><p class="err" id="err">' + esc(msg || "") + '</p><button class="btn big" id="ent">Entrar al panel</button></section>';
+    const go = async () => {
+      const v = document.getElementById("cod").value;
+      if (await sha(v) !== C.hashDocente) { document.getElementById("err").textContent = "Código incorrecto."; return; }
+      if (!C.sheetUrl) { document.getElementById("err").textContent = "Falta la URL de la planilla (sheetUrl) en js/config.js: sin ella no hay inicio sincronizado."; return; }
+      clave = v; cargar(); clearInterval(timer); timer = setInterval(() => cargar(), 5000);
+    };
+    document.getElementById("ent").onclick = go;
+    document.getElementById("cod").addEventListener("keydown", e => { if (e.key === "Enter") go(); });
+  }
+
+  async function pedir(accion) {
+    const url = C.sheetUrl + "?accion=" + accion + "&curso=" + encodeURIComponent(C.curso) + "&clave=" + encodeURIComponent(clave) + "&_=" + Date.now();
+    let r;
+    try { r = await fetch(url, { cache: "no-store" }); }
+    catch (e) { return { ok: false, error: "red" }; }
+    const txt = await r.text();
+    try { return JSON.parse(txt); }
+    catch (e) { return { ok: false, error: "viejo", detalle: txt.slice(0, 80) }; }
+  }
+  async function cargar(accion) {
+    if (ocupado && !accion) return;
+    ocupado = true;
+    try {
+      const j = await pedir(accion || "panel");
+      if (!j.ok) {
+        if (j.error === "red" && datos) { const st = document.getElementById("conn"); if (st) st.textContent = "⚠ Sin conexión con la planilla, reintentando…"; return; }
+        clearInterval(timer);
+        login({
+          clave: "La planilla rechazó el código docente. Revisá que el Apps Script tenga la lista CLAVES_DOCENTE actualizada.",
+          viejo: "La planilla respondió, pero con el Apps Script anterior (o sin autorizar). Pegá el código nuevo, guardá y en Implementar → Administrar implementaciones → ✏️ elegí «Nueva versión» y tocá Implementar (aceptá los permisos si los pide).",
+          red: "No se pudo conectar con la planilla. Revisá la conexión a internet y que la URL de sheetUrl en js/config.js sea la correcta."
+        }[j.error] || "Error: " + (j.error || "desconocido"));
+        return;
+      }
+      datos = j; dibujar();
+    } catch (e) {
+      const st = document.getElementById("conn"); if (st) st.textContent = "⚠ Sin conexión con la planilla, reintentando…";
+    } finally { ocupado = false; }
+  }
+
+  function dibujar() {
+    const d = datos, al = d.alumnos || [];
+    const n = k => al.filter(a => a.estado === k).length;
+    const fila = a => '<tr><td>' + esc(a.alumno) + '</td><td><span class="st ' + (a.estado === "en examen" ? "examen" : a.estado) + '">' + esc(a.estado) + '</span></td><td>' +
+      (a.estado === "esperando" ? "—" : esc(a.resp) + (a.total ? " / " + esc(a.total) : "")) + '</td><td>' + (a.salidas ? "⚠ " + esc(a.salidas) : "0") + '</td><td>' + esc(a.nota) + '</td></tr>';
+    root.innerHTML =
+      '<div class="panel-top"><div><h1 style="margin:0"><span class="grad">NEXO</span> · Panel docente</h1><p class="meta" style="margin:.2rem 0 0">' + esc(C.curso) + '</p></div>' +
+      '<span class="estado ' + (d.habilitado ? "on" : "") + '">' + (d.habilitado ? "🟢 Examen habilitado desde las " + hora(d.t) : "🟡 Sala de espera: inicio bloqueado") + '</span></div>' +
+      '<div class="kpis"><div class="kpi"><small>Conectados</small><b>' + al.length + '</b></div><div class="kpi"><small>Esperando</small><b>' + n("esperando") + '</b></div>' +
+      '<div class="kpi"><small>En examen</small><b>' + n("en examen") + '</b></div><div class="kpi"><small>Terminaron</small><b>' + n("terminado") + '</b></div></div>' +
+      '<section class="card"><div class="acciones">' +
+      (d.habilitado ? '' : '<button class="btn big" id="ini">▶ Habilitar el inicio para todos</button>') +
+      '<button class="btn ghost" id="cer">' + (d.habilitado ? "⏸ Cerrar la sala (los que no empezaron vuelven a esperar)" : "⟲ Limpiar la lista para una clase nueva") + '</button></div>' +
+      '<p class="tiny" style="margin:.8rem 0 0">Los estudiantes ven el cambio en unos 5 segundos. La lista se actualiza sola y muestra solo a quienes entraron desde la última limpieza (o en las últimas 3 horas).</p></section>' +
+      '<section class="card" style="margin-top:1rem;overflow:auto"><table class="tabla"><thead><tr><th>Estudiante</th><th>Estado</th><th>Respondidas</th><th>Salidas</th><th>Nota</th></tr></thead><tbody>' +
+      (al.length ? al.map(fila).join("") : '<tr><td colspan="5">Todavía no hay estudiantes conectados.</td></tr>') + '</tbody></table></section>' +
+      '<p class="sync" id="conn">Actualizado a las ' + new Date().toLocaleTimeString("es-AR") + '</p>';
+    const ini = document.getElementById("ini");
+    if (ini) ini.onclick = () => { if (confirm("¿Habilitar el inicio para " + n("esperando") + " estudiante(s) en espera?")) cargar("iniciar"); };
+    document.getElementById("cer").onclick = () => { if (confirm(d.habilitado ? "¿Cerrar la sala? Quien ya empezó sigue con su examen." : "¿Limpiar la lista para empezar una clase nueva?")) cargar("cerrar"); };
+  }
+
+  login();
+})();
+</script>
+</body>
+</html>

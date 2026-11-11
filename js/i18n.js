@@ -23,7 +23,7 @@ es: {
   go: "Comenzar el examen",
   exitsTitle: "Salidas de la página", fullscreen: "Pantalla completa", timeUp: "¡Se terminó el tiempo!", tenLeft: "Quedan 10 minutos.",
   progress: "Respondiste {a} de {n}", gradeNow: "Nota parcial", points: "Puntos", gradeHint: "La nota parcial se calcula sobre lo que ya respondiste.", map: "Tu recorrido",
-  qOf: "Desafío {i} de {n}", pts: "pts", answer: "Confirmar respuesta",
+  qOf: "Desafío {i} de {n}", pts: "pts", pt: "pt", answer: "Confirmar respuesta",
   fbOk1: "¡Excelente!", fbOk2: "¡Bien resuelto!", fbOk3: "¡Impecable!", fbMid1: "Vas bien, pero no está completo.", fbMid2: "Parcialmente correcto.", fbBad1: "Esta vez no salió.", fbBad2: "Respuesta incorrecta.",
   fbPts: "Sumaste {p} de {m} puntos.", fbGrade: "Tu nota parcial ahora es {g}", next: "Siguiente", seeResults: "Ver mis resultados",
   ing_rol: "Rol", ing_tarea: "Tarea", ing_contexto: "Contexto", ing_formato: "Formato", ing_ejemplos: "Ejemplos", ing_pasos: "Pasos",
@@ -55,6 +55,8 @@ es: {
   noShortcut: "Ese atajo está desactivado durante el examen.", noPaste: "Pegar está desactivado: escribí con tus palabras.",
   awayTitle: "Saliste de la página", awayMsg: "Quedó registrado: llevás {n} de {m} salidas. Al llegar a {m}, el examen se bloquea.", awayBack: "Volver al examen",
   lockTitle: "Examen bloqueado", lockMsg: "Saliste de la página demasiadas veces. Llamá a tu docente para continuar.",
+  iJust: "Elegí la opción correcta.", iJust2: "Justificá tu elección con tus palabras (mínimo 10 palabras): ¿por qué es esa y no otra?", phJust: "Elegí esta opción porque…", iPick: "¿Cuál de estos prompts produjo este resultado? Fijate en cada detalle.", detJust: "Tu justificación menciona {n} idea(s) clave.",
+  salaWait: "Esperando que tu docente habilite el inicio…", salaWaitMsg: "Todos empiezan al mismo tiempo. Mientras tanto, leé las reglas y las insignias. No cierres esta página.", salaOpen: "¡El examen está habilitado! Ya podés comenzar.", salaBtnWait: "Esperando al docente…", salaManual: "¿Sin conexión? Habilitar con código docente", goNow: "¡Comenzar ahora!",
   badge_ia: "Mente IA", badge_prompt: "Ingeniero/a de prompting", badge_bigdata: "Analista de datos", badge_iot: "Maker IoT", badge_trans: "Comunicador/a social", badge_redes: "Experto/a en redes", badge_etica: "Uso ético y responsable", badgeNew: "¡Nueva insignia!",
   mod_ia: "Concepto de IA", mod_prompt: "Prompting", mod_bigdata: "Big Data e IA", mod_iot: "Internet de las cosas", mod_trans: "Transmedia y prosumidores", mod_redes: "Redes PAN, LAN, MAN, WAN"
 },
@@ -81,7 +83,7 @@ fr: {
   go: "Commencer l'examen",
   exitsTitle: "Sorties de la page", fullscreen: "Plein écran", timeUp: "Le temps est écoulé !", tenLeft: "Il reste 10 minutes.",
   progress: "Tu as répondu à {a} sur {n}", gradeNow: "Note partielle", points: "Points", gradeHint: "La note partielle est calculée sur ce que tu as déjà répondu.", map: "Ton parcours",
-  qOf: "Défi {i} sur {n}", pts: "pts", answer: "Confirmer la réponse",
+  qOf: "Défi {i} sur {n}", pts: "pts", pt: "pt", answer: "Confirmer la réponse",
   fbOk1: "Excellent !", fbOk2: "Bien résolu !", fbOk3: "Impeccable !", fbMid1: "Tu es sur la bonne voie, mais ce n'est pas complet.", fbMid2: "Partiellement correct.", fbBad1: "Cette fois, ça n'a pas marché.", fbBad2: "Réponse incorrecte.",
   fbPts: "Tu as gagné {p} sur {m} points.", fbGrade: "Ta note partielle est maintenant {g}", next: "Suivant", seeResults: "Voir mes résultats",
   ing_rol: "Rôle", ing_tarea: "Tâche", ing_contexto: "Contexte", ing_formato: "Format", ing_ejemplos: "Exemples", ing_pasos: "Étapes",
@@ -113,6 +115,8 @@ fr: {
   noShortcut: "Ce raccourci est désactivé pendant l'examen.", noPaste: "Coller est désactivé : écris avec tes mots.",
   awayTitle: "Tu as quitté la page", awayMsg: "C'est enregistré : {n} sortie(s) sur {m}. À {m}, l'examen se bloque.", awayBack: "Revenir à l'examen",
   lockTitle: "Examen bloqué", lockMsg: "Tu as quitté la page trop de fois. Appelle ton professeur pour continuer.",
+  iJust: "Choisis la bonne option.", iJust2: "Justifie ton choix avec tes mots (minimum 10 mots) : pourquoi celle-ci et pas une autre ?", phJust: "J'ai choisi cette option parce que…", iPick: "Lequel de ces prompts a produit ce résultat ? Regarde chaque détail.", detJust: "Ta justification mentionne {n} idée(s) clé(s).",
+  salaWait: "En attente de l'autorisation de ton professeur…", salaWaitMsg: "Tout le monde commence en même temps. En attendant, lis les règles et les badges. Ne ferme pas cette page.", salaOpen: "L'examen est ouvert ! Tu peux commencer.", salaBtnWait: "En attente du professeur…", salaManual: "Pas de connexion ? Ouvrir avec le code du professeur", goNow: "Commencer maintenant !",
   badge_ia: "Esprit IA", badge_prompt: "Ingénieur·e de prompts", badge_bigdata: "Analyste de données", badge_iot: "Maker IoT", badge_trans: "Communicant·e social·e", badge_redes: "Expert·e en réseaux", badge_etica: "Usage éthique et responsable", badgeNew: "Nouveau badge !",
   mod_ia: "Concept d'IA", mod_prompt: "Prompting", mod_bigdata: "Big Data et IA", mod_iot: "Internet des objets", mod_trans: "Transmédia et prosommateurs", mod_redes: "Réseaux PAN, LAN, MAN, WAN"
 },
@@ -139,7 +143,7 @@ en: {
   go: "Start the exam",
   exitsTitle: "Page exits", fullscreen: "Full screen", timeUp: "Time is up!", tenLeft: "10 minutes left.",
   progress: "You answered {a} of {n}", gradeNow: "Current grade", points: "Points", gradeHint: "The current grade is based on what you have answered so far.", map: "Your path",
-  qOf: "Challenge {i} of {n}", pts: "pts", answer: "Confirm answer",
+  qOf: "Challenge {i} of {n}", pts: "pts", pt: "pt", answer: "Confirm answer",
   fbOk1: "Excellent!", fbOk2: "Well done!", fbOk3: "Spot on!", fbMid1: "Good try, but not complete.", fbMid2: "Partly correct.", fbBad1: "Not this time.", fbBad2: "Wrong answer.",
   fbPts: "You scored {p} of {m} points.", fbGrade: "Your current grade is now {g}", next: "Next", seeResults: "See my results",
   ing_rol: "Role", ing_tarea: "Task", ing_contexto: "Context", ing_formato: "Format", ing_ejemplos: "Examples", ing_pasos: "Steps",
@@ -171,6 +175,8 @@ en: {
   noShortcut: "That shortcut is disabled during the exam.", noPaste: "Pasting is disabled: write in your own words.",
   awayTitle: "You left the page", awayMsg: "It has been logged: {n} of {m} exits. At {m}, the exam locks.", awayBack: "Back to the exam",
   lockTitle: "Exam locked", lockMsg: "You left the page too many times. Call your teacher to continue.",
+  iJust: "Choose the correct option.", iJust2: "Justify your choice in your own words (at least 10 words): why this one and not another?", phJust: "I chose this option because…", iPick: "Which of these prompts produced this result? Check every detail.", detJust: "Your justification mentions {n} key idea(s).",
+  salaWait: "Waiting for your teacher to open the exam…", salaWaitMsg: "Everyone starts at the same time. Meanwhile, read the rules and badges. Don't close this page.", salaOpen: "The exam is open! You can start now.", salaBtnWait: "Waiting for the teacher…", salaManual: "No connection? Open with the teacher code", goNow: "Start now!",
   badge_ia: "AI Mind", badge_prompt: "Prompt Engineer", badge_bigdata: "Data Analyst", badge_iot: "IoT Maker", badge_trans: "Social Communicator", badge_redes: "Network Expert", badge_etica: "Ethical & Responsible Use", badgeNew: "New badge!",
   mod_ia: "AI concept", mod_prompt: "Prompting", mod_bigdata: "Big Data & AI", mod_iot: "Internet of Things", mod_trans: "Transmedia & prosumers", mod_redes: "Networks PAN, LAN, MAN, WAN"
 }
