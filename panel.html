@@ -68,8 +68,9 @@
   function dibujar() {
     const d = datos, al = d.alumnos || [];
     const n = k => al.filter(a => a.estado === k).length;
+    const hace = ms => { if (!ms || !d.ahora) return ""; const s = Math.max(0, Math.round((d.ahora - ms) / 1000)); return s < 60 ? "hace " + s + " s" : "hace " + Math.round(s / 60) + " min"; };
     const fila = a => '<tr><td>' + esc(a.alumno) + '</td><td><span class="st ' + (a.estado === "en examen" ? "examen" : a.estado) + '">' + esc(a.estado) + '</span></td><td>' +
-      (a.estado === "esperando" ? "—" : esc(a.resp) + (a.total ? " / " + esc(a.total) : "")) + '</td><td>' + (a.salidas ? "⚠ " + esc(a.salidas) : "0") + '</td><td>' + esc(a.nota) + '</td></tr>';
+      (a.estado === "esperando" ? "—" : esc(a.resp) + (a.total ? " / " + esc(a.total) : "")) + '</td><td>' + (a.salidas ? "⚠ " + esc(a.salidas) : "0") + '</td><td>' + esc(a.nota) + '</td><td>' + hace(a.ultima) + '</td></tr>';
     root.innerHTML =
       '<div class="panel-top"><div><h1 style="margin:0"><span class="grad">NEXO</span> · Panel docente</h1><p class="meta" style="margin:.2rem 0 0">' + esc(C.curso) + '</p></div>' +
       '<span class="estado ' + (d.habilitado ? "on" : "") + '">' + (d.habilitado ? "🟢 Examen habilitado desde las " + hora(d.t) : "🟡 Sala de espera: inicio bloqueado") + '</span></div>' +
@@ -79,8 +80,8 @@
       (d.habilitado ? '' : '<button class="btn big" id="ini">▶ Habilitar el inicio para todos</button>') +
       '<button class="btn ghost" id="cer">' + (d.habilitado ? "⏸ Cerrar la sala (los que no empezaron vuelven a esperar)" : "⟲ Limpiar la lista para una clase nueva") + '</button></div>' +
       '<p class="tiny" style="margin:.8rem 0 0">Los estudiantes ven el cambio en unos 5 segundos. La lista se actualiza sola y muestra solo a quienes entraron desde la última limpieza (o en las últimas 3 horas).</p></section>' +
-      '<section class="card" style="margin-top:1rem;overflow:auto"><table class="tabla"><thead><tr><th>Estudiante</th><th>Estado</th><th>Respondidas</th><th>Salidas</th><th>Nota</th></tr></thead><tbody>' +
-      (al.length ? al.map(fila).join("") : '<tr><td colspan="5">Todavía no hay estudiantes conectados.</td></tr>') + '</tbody></table></section>' +
+      '<section class="card" style="margin-top:1rem;overflow:auto"><table class="tabla"><thead><tr><th>Estudiante</th><th>Estado</th><th>Respondidas</th><th>Salidas</th><th>Nota</th><th>Última actividad</th></tr></thead><tbody>' +
+      (al.length ? al.map(fila).join("") : '<tr><td colspan="6">Todavía no hay estudiantes conectados.</td></tr>') + '</tbody></table></section>' +
       '<p class="sync" id="conn">Actualizado a las ' + new Date().toLocaleTimeString("es-AR") + '</p>';
     const ini = document.getElementById("ini");
     if (ini) ini.onclick = () => { if (confirm("¿Habilitar el inicio para " + n("esperando") + " estudiante(s) en espera?")) cargar("iniciar"); };
